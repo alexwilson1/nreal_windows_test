@@ -1,26 +1,28 @@
-"""Demo code showing how to estimate human head pose.
-
-There are three major steps:
-1. Detect human face in the video frame.
-2. Run facial landmark detection on the face image.
-3. Estimate the pose by solving a PnP problem.
-
-To find more details, please refer to:
-https://github.com/yinguobing/head-pose-estimation
-"""
-from argparse import ArgumentParser
-
 import cv2
-
+import collections
 from mark_detector import MarkDetector
 from pose_estimator import PoseEstimator
 import mss
 import numpy as np
+
 print(__doc__)
 print("OpenCV version: {}".format(cv2.__version__))
 
+angles_avg_store = collections.deque(maxlen=2)
 
+# measured calibration parameters found from printing angles variable (tilt, pan, roll)
+pan_right = -30
+pan_left = 15
+tilt_neutral = -5
+tilt_down = -15
+tilt_up = 8
 
+# virtual screen parameters (found from sct.monitors)
+left_mon = 2
+center_mon = 3
+right_mon = 4
+screen_width = 1920
+screen_height = 1080
 
 # Before estimation started, there are some startup works to do.
 
@@ -43,9 +45,13 @@ mark_detector = MarkDetector()
 # 4. Measure the performance with a tick meter.
 tm = cv2.TickMeter()
 
-# Now, let the frames flow.
-mon = 3
 
+# Now, let the frames flow.
+
+normed_pan_angle = 0
+normed_pitch_angle = 0
+
+# translate from one range to another
 def translate(value, leftMin, leftMax, rightMin, rightMax):
     # Figure out how 'wide' each range is
     leftSpan = leftMax - leftMin
@@ -57,8 +63,8 @@ def translate(value, leftMin, leftMax, rightMin, rightMax):
     # Convert the 0-1 range into a value in the right range.
     return rightMin + (valueScaled * rightSpan)
 
-with mss.mss() as sct:
 
+with mss.mss() as sct:
     while True:
 
         # Read a frame.
@@ -94,47 +100,35 @@ with mss.mss() as sct:
             # Try pose estimation with 68 points.
             pose = pose_estimator.solve_pose_by_68_points(marks)
 
-            # All done. The best way to show the result would be drawing the
-            # pose on the frame in realtime.
-
-            # Do you want to see the pose annotation?
-            # pose_estimator.draw_annotation_box(
-            #     frame, pose[0], pose[1], color=(0, 255, 0))
-
-            # Do you want to see the head axes?
-            # pose_estimator.draw_axes(frame, pose[0], pose[1])
-
-            # Do you want to see the marks?
-            # mark_detector.draw_marks(frame, marks, color=(0, 255, 0))
-
-            # Do you want to see the facebox?
-            # mark_detector.draw_box(frame, [facebox])
-
+            # calculate face angles
             rmat, jac = cv2.Rodrigues(pose[0])
             angles, mtxR, mtxQ, Qx, Qy, Qz = cv2.RQDecomp3x3(rmat)
+            angles_avg_store.append(angles)
 
-            print(angles)
+            # find the moving average angles to reduce shake
+            averaged_pan_angle = sum(el[1] for el in angles_avg_store) / len(angles_avg_store)
+            averaged_pitch_angle = sum(el[0] for el in angles_avg_store) / len(angles_avg_store)
+
             # Convert raw angles to range [-1,1] where 1 is right screen full, -1 is left screen full
-            normed_pan_angle = translate(angles[1], -30, 15, -1, 1)
+            normed_pan_angle = translate(averaged_pan_angle, pan_right, pan_left, -1, 1)
             normed_pan_angle = -normed_pan_angle
             if normed_pan_angle > 1:
                 normed_pan_angle = 1
             if normed_pan_angle < -1:
                 normed_pan_angle = -1
 
-            normed_pitch_angle = translate(angles[0], -20, 10, -1, 1)
+            # normalise and clip pitch angles using piecewise linear functions
+            if averaged_pitch_angle < tilt_neutral:
+                normed_pitch_angle = (averaged_pitch_angle - tilt_neutral) / (tilt_neutral - tilt_down)
+            else:
+                normed_pitch_angle = (averaged_pitch_angle - tilt_neutral) / (tilt_up - tilt_neutral)
+
             if normed_pitch_angle > 1:
                 normed_pitch_angle = 1
             if normed_pitch_angle < -1:
                 normed_pitch_angle = -1
 
-
-        left_mon = 2
-        center_mon = 3
-        right_mon = 4
-        screen_width = 1920
-        screen_height = 1080
-
+        # looking left case
         if normed_pan_angle < 0:
             img_left_mon = np.array(sct.grab(sct.monitors[left_mon]))
             img_center_mon = np.array(sct.grab(sct.monitors[center_mon]))
@@ -143,22 +137,25 @@ with mss.mss() as sct:
 
             img = np.concatenate((sliced_img_left_mon, sliced_img_center_mon), axis=1)
 
+        # looking right case
         if normed_pan_angle >= 0:
-            img_right_mon = np.array(sct.grab(sct.monitors[left_mon]))
+            img_right_mon = np.array(sct.grab(sct.monitors[right_mon]))
             img_center_mon = np.array(sct.grab(sct.monitors[center_mon]))
             sliced_img_right_mon = img_right_mon[:, 0:int(abs(normed_pan_angle) * screen_width), :]
             sliced_img_center_mon = img_center_mon[:, int(abs(normed_pan_angle) * screen_width):, :]
 
             img = np.concatenate((sliced_img_center_mon, sliced_img_right_mon), axis=1)
 
-
+        # looking up case
         if normed_pitch_angle > 0:
             # shift image down, replacing by black
             showing_screen = img[0:int((1 - abs(normed_pitch_angle)) * screen_height), :, :]
-            showing_black = np.zeros((screen_height - int((1 - abs(normed_pitch_angle)) * screen_height), screen_width, 4), dtype=np.uint8)
+            showing_black = np.zeros(
+                (screen_height - int((1 - abs(normed_pitch_angle)) * screen_height), screen_width, 4), dtype=np.uint8)
             showing_black[:, :, 3] = 255
             img = np.concatenate((showing_black, showing_screen), axis=0)
 
+        # looking down case
         if normed_pitch_angle <= 0:
             # shift image up, replacing by black
             showing_screen = img[int(abs(normed_pitch_angle) * screen_height):, :, :]
@@ -166,9 +163,9 @@ with mss.mss() as sct:
             showing_black[:, :, 3] = 255
             img = np.concatenate((showing_screen, showing_black), axis=0)
 
-
         # Display the picture
         cv2.namedWindow("window", cv2.WND_PROP_FULLSCREEN)
+        # cv2.moveWindow("window", -500, 0) # this could be used to automatically move window to a new screen
         cv2.setWindowProperty("window", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
         cv2.imshow("window", img)
 
@@ -176,8 +173,3 @@ with mss.mss() as sct:
         if cv2.waitKey(25) & 0xFF == ord("q"):
             cv2.destroyAllWindows()
             break
-
-        # Show preview.
-        # cv2.imshow("Preview", frame)
-        # if cv2.waitKey(1) == 27:
-        #     break

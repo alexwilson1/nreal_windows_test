@@ -1,86 +1,54 @@
-# Head pose estimation
+# NReal Air AR Multiple Screens (Windows 11)
+Simple project to get a proof of concept for Nreal Air AR glasses working in Windows. The main purpose of this is to unlock some development in the space.
 
-Real time human head pose estimation using TensorFlow and OpenCV.
+This was created during some spare personal time, and is in no way endorsed by or associated with any organization.
 
-![demo](doc/demo.gif)
-![demo](doc/demo1.gif)
+Use this entirely at your own risk and read the license.
 
-## Getting Started
+This is not being actively maintained.
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
+Current issues:
 
-### Prerequisites
+1. Framerate/lag/high resource usage - mainly due to ML models being used for head pose estimation. Probably the best method here would be to try and use the gyro from the device itself.
+2. Mouse not shown on display - known issue with a few possible solutions https://stackoverflow.com/questions/72328718/python-take-screenshot-including-mouse-cursor
+3. Extra screen that is used to display the video output should somehow be disabled from interaction with other windows
+4. Hardcoded to work with three virtual screens - could be generalised to 'n' screens
+5. Viewport algorithm is basic and does not account for translation or roll
+6. Calibration can be an issue - the best way to solve this would be to use the gyro in the device
 
-![TensorFlow](https://img.shields.io/badge/TensorFlow-v2.4-brightgreen)
-![OpenCV](https://img.shields.io/badge/OpenCV-v4.5-brightgreen)
-![Numpy](https://img.shields.io/badge/Numpy-v1.19-brightgreen)
-
-The code was tested on Ubuntu 20.04 and macOS Big Sur.
 
 ### Installing
 
-This repository already provided a pre-trained model for facial landmarks detection. Just git clone then you are good to go.
+1. Git clone the repo and use conda/mamba to create the environment from the environment.yml file
 
-```bash
-# From your favorite development directory:
-git clone --depth=1 https://github.com/yinguobing/head-pose-estimation.git
-```
+2. Create three virtual displays using this guide:
+https://www.amyuni.com/forum/viewtopic.php?t=3030
 
-## Running
+3. Calibrate variables at the top by printing the 'angles' variable and moving your head to up/down/left/right extremes
 
-A video file or a webcam index should be assigned through arguments. If no source provided, the built in webcam will be used by default.
-
-### With video file
-
-For any video format that OpenCV supports (`mp4`, `avi` etc.):
-
-```bash
-python3 main.py --video /path/to/video.mp4
-```
-
-### With webcam
-
-The webcam index should be provided:
-
-```bash
-python3 main.py --cam 0
-``` 
-
+4. Read the sct.monitors variable to figure out which monitors are which and update these variable numbers
 ## How it works
 
-There are three major steps:
 
-1. Face detection. A face detector is introduced to provide a face bounding box containing a human face. Then the face box is expanded and transformed to a square to suit the needs of later steps.
+1. Face detection and angle detection
 
-2. Facial landmark detection. A pre-trained deep learning model take the face image as input and output 68 facial landmarks.
+2. Determining which 'screens' (virtual) the user is 'looking at' and by how much
 
-3. Pose estimation. After getting 68 facial landmarks, the pose could be calculated by a mutual PnP algorithm.
+3. Capturing relevant portions of those 'screens' and combining them into a 1920x1080 image. Adding black borders to parts of the image that are not 'in view'
 
-## Retrain the model
+4. Outputting the image to the Nreal Air display
 
-To retrain the facial landmark detection model, please refer to this series of [posts](https://yinguobing.com/deeplearning/) (in Chinese only). The training code is also open sourced: https://github.com/yinguobing/cnn-facial-landmark
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Authors
-Yin Guobing (尹国冰) - [yinguobing](https://yinguobing.com)
-
+Alex Wilson
 
 ## Acknowledgments
-The pre-trained TensorFlow model file is trained with various public data sets which have their own licenses. Please refer to them before using this code.
+The head pose estimation algorithm and models come from Yin Guobing (one of the models was modified by conversion to ONNX)
+:
+https://github.com/yinguobing/head-pose-estimation
 
-- 300-W: https://ibug.doc.ic.ac.uk/resources/300-W/
-- 300-VW: https://ibug.doc.ic.ac.uk/resources/300-VW/
-- LFPW: https://neerajkumar.org/databases/lfpw/
-- HELEN: http://www.ifp.illinois.edu/~vuongle2/helen/
-- AFW: https://www.ics.uci.edu/~xzhu/face/
-- IBUG: https://ibug.doc.ic.ac.uk/resources/facial-point-annotations/
-
-The 3D model of face comes from OpenFace, you can find the original file [here](https://github.com/TadasBaltrusaitis/OpenFace/blob/master/lib/local/LandmarkDetector/model/pdms/In-the-wild_aligned_PDM_68.txt).
-
-The build in face detector comes from OpenCV. 
-https://github.com/opencv/opencv/tree/master/samples/dnn/face_detector
-
-Adding monitors:
+The virtual display driver (not included) comes from Amyuni:
 https://www.amyuni.com/forum/viewtopic.php?t=3030
