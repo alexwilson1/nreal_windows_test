@@ -19,14 +19,14 @@ Current (known) issues:
 
 ### Installing
 
-1. Git clone the repo and use conda/mamba to create the environment from the environment.yml file
+1. Git clone the repo and use conda/mamba to create the environment from the `environment.yml` file
 
 2. Create three virtual displays using this guide:
 https://www.amyuni.com/forum/viewtopic.php?t=3030
 
-3. Calibrate variables at the top by printing the 'angles' variable and moving your head to up/down/left/right extremes
+3. Calibrate variables at the top by printing the `angles` variable and moving your head to up/down/left/right extremes. Take measurements and replace the values at the top of `main.py`
 
-4. Read the sct.monitors variable to figure out which monitors are which and update these variable numbers
+4. Read the `sct.monitors` variable to figure out which monitors are which and update these variable numbers
 ## How it works
 
 
