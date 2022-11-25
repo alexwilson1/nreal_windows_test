@@ -2,6 +2,7 @@
 import cv2
 import numpy as np
 import tensorflow as tf
+import onnxruntime as ort
 
 
 class FaceDetector:
@@ -71,7 +72,7 @@ class MarkDetector:
         self.marks = None
 
         # Restore model from the saved_model file.
-        self.model = tf.keras.models.load_model(saved_model)
+        self.sess = ort.InferenceSession("mark_detector_onnx.onnx", providers=["CUDAExecutionProvider"])
 
     @staticmethod
     def draw_box(image, boxes, box_color=(255, 255, 255)):
@@ -163,10 +164,10 @@ class MarkDetector:
         inputs = tf.expand_dims(image, axis=0)
 
         # Actual detection.
-        marks = self.model.predict(inputs)
-
+        #marks = self.model.predict(inputs)
+        results_ort = self.sess.run(None, {"image_input": inputs.numpy().astype(np.float32)})[0]
         # Convert predictions to landmarks.
-        marks = np.reshape(marks, (-1, 2))
+        marks = np.reshape(results_ort, (-1, 2))
 
         return marks
 

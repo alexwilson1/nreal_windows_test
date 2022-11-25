@@ -117,13 +117,13 @@ with mss.mss() as sct:
             # Convert raw angles to range [-1,1] where 1 is right screen full, -1 is left screen full
             normed_pan_angle = translate(angles[1], -30, 15, -1, 1)
             normed_pan_angle = -normed_pan_angle
-            if normed_pan_angle>1:
+            if normed_pan_angle > 1:
                 normed_pan_angle = 1
             if normed_pan_angle < -1:
                 normed_pan_angle = -1
 
             normed_pitch_angle = translate(angles[0], -20, 10, -1, 1)
-            if normed_pitch_angle>1:
+            if normed_pitch_angle > 1:
                 normed_pitch_angle = 1
             if normed_pitch_angle < -1:
                 normed_pitch_angle = -1
@@ -151,11 +151,6 @@ with mss.mss() as sct:
 
             img = np.concatenate((sliced_img_center_mon, sliced_img_right_mon), axis=1)
 
-
-        if normed_pitch_angle < 0:
-            # shift image up, replacing by black
-
-            print('test')
 
         if normed_pitch_angle > 0:
             # shift image down, replacing by black
