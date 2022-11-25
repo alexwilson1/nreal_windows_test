@@ -46,6 +46,17 @@ tm = cv2.TickMeter()
 # Now, let the frames flow.
 mon = 3
 
+def translate(value, leftMin, leftMax, rightMin, rightMax):
+    # Figure out how 'wide' each range is
+    leftSpan = leftMax - leftMin
+    rightSpan = rightMax - rightMin
+
+    # Convert the left range into a 0-1 range (float)
+    valueScaled = float(value - leftMin) / float(leftSpan)
+
+    # Convert the 0-1 range into a value in the right range.
+    return rightMin + (valueScaled * rightSpan)
+
 with mss.mss() as sct:
 
     while True:
@@ -102,22 +113,36 @@ with mss.mss() as sct:
             rmat, jac = cv2.Rodrigues(pose[0])
             angles, mtxR, mtxQ, Qx, Qy, Qz = cv2.RQDecomp3x3(rmat)
 
-            print(angles)
-
-            pan_angle = angles[1]
-            if pan_angle > 10:
-                mon = 2
-
-            elif pan_angle < -15:
-                mon = 4
-
-            else:
-                mon = 3
-            print(mon)
+            # Convert raw angles to range [-1,1] where 1 is right screen full, -1 is left screen full
+            normed_angle = translate(angles[1], -30, 15, -1, 1)
+            normed_angle = -normed_angle
+            if normed_angle>1:
+                normed_angle = 1
+            if normed_angle < -1:
+                normed_angle = -1
 
 
-        # Get raw pixels from the screen, save it to a Numpy array
-        img = np.array(sct.grab(sct.monitors[mon]))
+        left_mon = 2
+        center_mon = 3
+        right_mon = 4
+        screen_width = 1920
+        print(normed_angle)
+        if normed_angle < 0:
+            img_left_mon = np.array(sct.grab(sct.monitors[left_mon]))
+            img_center_mon = np.array(sct.grab(sct.monitors[center_mon]))
+            sliced_img_left_mon = img_left_mon[:, int((1 - abs(normed_angle)) * screen_width):, :]
+            sliced_img_center_mon = img_center_mon[:, 0:int((1 - abs(normed_angle)) * screen_width), :]
+
+            img = np.concatenate((sliced_img_left_mon, sliced_img_center_mon), axis=1)
+
+        if normed_angle >= 0:
+            img_right_mon = np.array(sct.grab(sct.monitors[left_mon]))
+            img_center_mon = np.array(sct.grab(sct.monitors[center_mon]))
+            sliced_img_right_mon = img_right_mon[:, 0:int(abs(normed_angle) * screen_width), :]
+            sliced_img_center_mon = img_center_mon[:, int(abs(normed_angle) * screen_width):, :]
+
+            img = np.concatenate((sliced_img_center_mon, sliced_img_right_mon), axis=1)
+
 
         # Display the picture
         cv2.namedWindow("window", cv2.WND_PROP_FULLSCREEN)
