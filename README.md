@@ -1,4 +1,4 @@
-# NReal Air AR Multiple Screens (Windows 11)
+# Nreal Air AR Multiple Screens (Windows 11)
 Simple project to get a proof of concept for Nreal Air AR glasses working in Windows. The main purpose of this is to unlock some development in the space.
 
 This was created during some spare personal time, and is in no way endorsed by or associated with any organization.
