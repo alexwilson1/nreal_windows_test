@@ -66,7 +66,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Authors
 Yin Guobing (尹国冰) - [yinguobing](https://yinguobing.com)
 
-![](doc/wechat_logo.png)
 
 ## Acknowledgments
 The pre-trained TensorFlow model file is trained with various public data sets which have their own licenses. Please refer to them before using this code.
@@ -82,3 +81,6 @@ The 3D model of face comes from OpenFace, you can find the original file [here](
 
 The build in face detector comes from OpenCV. 
 https://github.com/opencv/opencv/tree/master/samples/dnn/face_detector
+
+Adding monitors:
+https://www.amyuni.com/forum/viewtopic.php?t=3030

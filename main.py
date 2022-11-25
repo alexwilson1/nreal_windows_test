@@ -14,35 +14,40 @@ import cv2
 
 from mark_detector import MarkDetector
 from pose_estimator import PoseEstimator
-
+import mss
+import numpy as np
 print(__doc__)
 print("OpenCV version: {}".format(cv2.__version__))
 
 
 
-if __name__ == '__main__':
-    # Before estimation started, there are some startup works to do.
 
-    # 1. Setup the video source from webcam
+# Before estimation started, there are some startup works to do.
 
-    video_src = 1
+# 1. Setup the video source from webcam
 
-    cap = cv2.VideoCapture(video_src)
+video_src = 1
 
-    # Get the frame size. This will be used by the pose estimator.
-    width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
-    height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+cap = cv2.VideoCapture(video_src)
 
-    # 2. Introduce a pose estimator to solve pose.
-    pose_estimator = PoseEstimator(img_size=(height, width))
+# Get the frame size. This will be used by the pose estimator.
+width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
-    # 3. Introduce a mark detector to detect landmarks.
-    mark_detector = MarkDetector()
+# 2. Introduce a pose estimator to solve pose.
+pose_estimator = PoseEstimator(img_size=(height, width))
 
-    # 4. Measure the performance with a tick meter.
-    tm = cv2.TickMeter()
+# 3. Introduce a mark detector to detect landmarks.
+mark_detector = MarkDetector()
 
-    # Now, let the frames flow.
+# 4. Measure the performance with a tick meter.
+tm = cv2.TickMeter()
+
+# Now, let the frames flow.
+mon = 3
+
+with mss.mss() as sct:
+
     while True:
 
         # Read a frame.
@@ -94,7 +99,37 @@ if __name__ == '__main__':
             # Do you want to see the facebox?
             # mark_detector.draw_box(frame, [facebox])
 
-        # Show preview.
-        cv2.imshow("Preview", frame)
-        if cv2.waitKey(1) == 27:
+            rmat, jac = cv2.Rodrigues(pose[0])
+            angles, mtxR, mtxQ, Qx, Qy, Qz = cv2.RQDecomp3x3(rmat)
+
+            print(angles)
+
+            pan_angle = angles[1]
+            if pan_angle > 10:
+                mon = 2
+
+            elif pan_angle < -15:
+                mon = 4
+
+            else:
+                mon = 3
+            print(mon)
+
+
+        # Get raw pixels from the screen, save it to a Numpy array
+        img = np.array(sct.grab(sct.monitors[mon]))
+
+        # Display the picture
+        cv2.namedWindow("window", cv2.WND_PROP_FULLSCREEN)
+        cv2.setWindowProperty("window", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        cv2.imshow("window", img)
+
+        # Press "q" to quit
+        if cv2.waitKey(25) & 0xFF == ord("q"):
+            cv2.destroyAllWindows()
             break
+
+        # Show preview.
+        # cv2.imshow("Preview", frame)
+        # if cv2.waitKey(1) == 27:
+        #     break
