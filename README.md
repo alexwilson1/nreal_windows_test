@@ -37,7 +37,7 @@ https://www.amyuni.com/forum/viewtopic.php?t=3030
 4. Hardcoded to work with three virtual screens - could be generalised to 'n' screens
 5. Viewport algorithm is basic and does not account for translation or roll
 6. Calibration can be an issue - the best way to solve this would be to use the gyro in the device
-
+7. Python - good for a POC but not necessarily the fastest approach. C-based implementations would possibly be more performant.
 
 
 
