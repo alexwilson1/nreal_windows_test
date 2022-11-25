@@ -1,0 +1,14 @@
+name: nreal_windows_test
+
+dependencies:
+  - python=3.9
+  - numpy
+  - opencv
+  - cudatoolkit=11.2
+  - cudnn=8.1.0
+  - pillow
+  - mss
+  - pip:
+      - tensorflow==2.10.0
+      - tf2onnx
+      - onnxruntime
