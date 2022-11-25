@@ -7,7 +7,7 @@ Use this entirely at your own risk and read the license.
 
 This is not being actively maintained.
 
-Current issues:
+Current (known) issues:
 
 1. Framerate/lag/high resource usage - mainly due to ML models being used for head pose estimation. Probably the best method here would be to try and use the gyro from the device itself.
 2. Mouse not shown on display - known issue with a few possible solutions https://stackoverflow.com/questions/72328718/python-take-screenshot-including-mouse-cursor
