@@ -98,8 +98,8 @@ with mss.mss() as sct:
             # pose on the frame in realtime.
 
             # Do you want to see the pose annotation?
-            pose_estimator.draw_annotation_box(
-                frame, pose[0], pose[1], color=(0, 255, 0))
+            # pose_estimator.draw_annotation_box(
+            #     frame, pose[0], pose[1], color=(0, 255, 0))
 
             # Do you want to see the head axes?
             # pose_estimator.draw_axes(frame, pose[0], pose[1])
@@ -113,35 +113,63 @@ with mss.mss() as sct:
             rmat, jac = cv2.Rodrigues(pose[0])
             angles, mtxR, mtxQ, Qx, Qy, Qz = cv2.RQDecomp3x3(rmat)
 
+            print(angles)
             # Convert raw angles to range [-1,1] where 1 is right screen full, -1 is left screen full
-            normed_angle = translate(angles[1], -30, 15, -1, 1)
-            normed_angle = -normed_angle
-            if normed_angle>1:
-                normed_angle = 1
-            if normed_angle < -1:
-                normed_angle = -1
+            normed_pan_angle = translate(angles[1], -30, 15, -1, 1)
+            normed_pan_angle = -normed_pan_angle
+            if normed_pan_angle>1:
+                normed_pan_angle = 1
+            if normed_pan_angle < -1:
+                normed_pan_angle = -1
+
+            normed_pitch_angle = translate(angles[0], -20, 10, -1, 1)
+            if normed_pitch_angle>1:
+                normed_pitch_angle = 1
+            if normed_pitch_angle < -1:
+                normed_pitch_angle = -1
 
 
         left_mon = 2
         center_mon = 3
         right_mon = 4
         screen_width = 1920
-        print(normed_angle)
-        if normed_angle < 0:
+        screen_height = 1080
+
+        if normed_pan_angle < 0:
             img_left_mon = np.array(sct.grab(sct.monitors[left_mon]))
             img_center_mon = np.array(sct.grab(sct.monitors[center_mon]))
-            sliced_img_left_mon = img_left_mon[:, int((1 - abs(normed_angle)) * screen_width):, :]
-            sliced_img_center_mon = img_center_mon[:, 0:int((1 - abs(normed_angle)) * screen_width), :]
+            sliced_img_left_mon = img_left_mon[:, int((1 - abs(normed_pan_angle)) * screen_width):, :]
+            sliced_img_center_mon = img_center_mon[:, 0:int((1 - abs(normed_pan_angle)) * screen_width), :]
 
             img = np.concatenate((sliced_img_left_mon, sliced_img_center_mon), axis=1)
 
-        if normed_angle >= 0:
+        if normed_pan_angle >= 0:
             img_right_mon = np.array(sct.grab(sct.monitors[left_mon]))
             img_center_mon = np.array(sct.grab(sct.monitors[center_mon]))
-            sliced_img_right_mon = img_right_mon[:, 0:int(abs(normed_angle) * screen_width), :]
-            sliced_img_center_mon = img_center_mon[:, int(abs(normed_angle) * screen_width):, :]
+            sliced_img_right_mon = img_right_mon[:, 0:int(abs(normed_pan_angle) * screen_width), :]
+            sliced_img_center_mon = img_center_mon[:, int(abs(normed_pan_angle) * screen_width):, :]
 
             img = np.concatenate((sliced_img_center_mon, sliced_img_right_mon), axis=1)
+
+
+        if normed_pitch_angle < 0:
+            # shift image up, replacing by black
+
+            print('test')
+
+        if normed_pitch_angle > 0:
+            # shift image down, replacing by black
+            showing_screen = img[0:int((1 - abs(normed_pitch_angle)) * screen_height), :, :]
+            showing_black = np.zeros((screen_height - int((1 - abs(normed_pitch_angle)) * screen_height), screen_width, 4), dtype=np.uint8)
+            showing_black[:, :, 3] = 255
+            img = np.concatenate((showing_black, showing_screen), axis=0)
+
+        if normed_pitch_angle <= 0:
+            # shift image up, replacing by black
+            showing_screen = img[int(abs(normed_pitch_angle) * screen_height):, :, :]
+            showing_black = np.zeros((int(abs(normed_pitch_angle) * screen_height), screen_width, 4), dtype=np.uint8)
+            showing_black[:, :, 3] = 255
+            img = np.concatenate((showing_screen, showing_black), axis=0)
 
 
         # Display the picture
