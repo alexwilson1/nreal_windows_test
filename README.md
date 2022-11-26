@@ -28,7 +28,7 @@ https://www.amyuni.com/forum/viewtopic.php?t=3030
 
 4. Read the `sct.monitors` variable to figure out which monitors are which and update these variable numbers
 
-5. Run main.py and ensure the generated output display window is opened on the Nreal display 
+5. Run `main.py` and ensure the generated output display window is opened on the Nreal display 
 ### Current (known) issues:
 
 1. Framerate/lag/high resource usage - mainly due to ML models being used for head pose estimation. Probably the best method here would be to try and use the gyro from the device itself.
