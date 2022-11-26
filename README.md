@@ -6,8 +6,8 @@ This was created during some spare personal time, and is in no way endorsed by o
 Use this entirely at your own risk and read the license.
 
 This is not being actively maintained.
-
-## How it works
+## Instructions
+### How it works
 
 1. Face detection and angle detection, using camera and ML models
 
@@ -38,7 +38,7 @@ https://www.amyuni.com/forum/viewtopic.php?t=3030
 5. Viewport algorithm is basic and does not account for translation or roll
 6. Calibration can be an issue - the best way to solve this would be to use the gyro in the device
 7. Python - good for a POC but not necessarily the fastest approach. C-based implementations would possibly be more performant.
-
+8. Head tracking via camera - limits applications and quality. Gyro would be better.
 
 
 ## License
